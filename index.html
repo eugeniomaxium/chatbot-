@@ -60,6 +60,7 @@
 
     let recognition;
     let recognizing = false;
+    let voiceModeActive = false; // Track if mic was on before speaking
 
     function addMessage(cls, text) {
       const d = document.createElement('div');
@@ -70,6 +71,7 @@
     }
 
     function speak(text) {
+      // Stop mic while speaking
       if (recognition && recognizing) {
         recognition.stop();
         recognizing = false;
@@ -80,10 +82,15 @@
       utterance.lang = 'en-US';
 
       utterance.onend = () => {
-        if (recognition && !recognizing) {
-          recognition.start();
-          recognizing = true;
-          mic.textContent = '🎙️';
+        // Only restart mic if voice mode was active before speaking
+        if (voiceModeActive) {
+          setTimeout(() => {
+            if (recognition && !recognizing) {
+              recognition.start();
+              recognizing = true;
+              mic.textContent = '🎙️';
+            }
+          }, 1500); // delay in ms
         }
       };
 
@@ -93,10 +100,10 @@
     function getBotReply(msg) {
       const m = msg.toLowerCase();
       if (m.includes('mission')) {
-        return 'Our mission is empowering students with expert‑guided education and practical training.';
+        return 'Our mission is empowering students with expert-guided education and practical training.';
       }
       if (m.includes('why choose') || m.includes('why should i choose')) {
-        return 'Choose Petroleum Academy for world‑class instructors, engaging content, and a supportive community to help you reach your goals faster.';
+        return 'Choose Petroleum Academy for world-class instructors, engaging content, and a supportive community to help you reach your goals faster.';
       }
       if (m.includes('contact')) {
         return 'Fill out the contact form on their website with your name, email, and message, then click "Enviar Mensaje".';
@@ -108,7 +115,7 @@
         return 'They offer Universidad de la Marina Mercante program, Curso de Inglés Técnico, and Ciberseguridad Industrial.';
       }
       if (m.includes('inglés técnico') || m.includes('english course')) {
-        return 'The Technical English course teaches English from basic to advanced across six certificate‑levels.';
+        return 'The Technical English course teaches English from basic to advanced across six certificate-levels.';
       }
       if (m.includes('ciberseguridad') || m.includes('industrial cybersecurity')) {
         return 'The Industrial Cybersecurity course focuses on protecting Industrial Control Systems and OT environments.';
@@ -157,7 +164,7 @@
       recognition = new SpeechRecognition();
       recognition.lang = 'en-US';
       recognition.interimResults = false;
-      recognition.continuous = true;
+      recognition.continuous = false; // only listen once
 
       recognition.onstart = () => {
         recognizing = true;
@@ -167,9 +174,7 @@
       recognition.onend = () => {
         recognizing = false;
         mic.textContent = '🎤';
-        setTimeout(() => {
-          if (!recognizing) recognition.start();
-        }, 500);
+        // No auto-restart here; speak() handles it if needed
       };
 
       recognition.onresult = function(event) {
@@ -187,10 +192,12 @@
 
     mic.onclick = () => {
       if (!recognizing) {
+        voiceModeActive = true; // mic activated by user
         startVoiceRecognition();
       } else {
         recognition.stop();
         recognizing = false;
+        voiceModeActive = false; // mic turned off manually
         mic.textContent = '🎤';
       }
     };
